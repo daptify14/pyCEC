@@ -27,8 +27,9 @@ def main():
 
     transports = set()
     loop = asyncio.get_event_loop()
+    adapter_path = config['DEFAULT']['adapter'] if config['DEFAULT']['adapter'] else None
     network = HDMINetwork(CecAdapter("pyCEC", activate_source=False, 
-                                   adapter_path=config['DEFAULT']['adapter']),
+                                   adapter_path=adapter_path),
                           loop=loop)
 
     class CECServerProtocol(asyncio.Protocol):
@@ -121,10 +122,10 @@ def configure():
     (options, args) = parser.parse_args()
     script_dir = os.path.dirname(os.path.realpath(__file__))
     config = configparser.ConfigParser()
-    config['DEFAULT'] = {'host': options.host, 'port': options.port,
-                         'adapter': options.adapter,
-                         'logLevel': logging.INFO + (
-                             (options.quiet - options.verbose) * 10)}
+    config['DEFAULT'] = {'host': options.host, 'port': str(options.port),
+                         'adapter': options.adapter or '',
+                         'logLevel': str(logging.INFO + (
+                             (options.quiet - options.verbose) * 10))}
     paths = ['/etc/pycec.conf', script_dir + '/pycec.conf']
     if 'HOME' in os.environ:
         paths.append(os.environ['HOME'] + '/.pycec')
