@@ -27,7 +27,8 @@ def main():
 
     transports = set()
     loop = asyncio.get_event_loop()
-    network = HDMINetwork(CecAdapter("pyCEC", activate_source=False),
+    network = HDMINetwork(CecAdapter("pyCEC", activate_source=False, 
+                                   adapter_path=config['DEFAULT']['adapter']),
                           loop=loop)
 
     class CECServerProtocol(asyncio.Protocol):
@@ -109,6 +110,10 @@ def configure():
                       default=DEFAULT_PORT,
                       help=("Port to bind to. Default is '%s'."
                             % DEFAULT_PORT))
+    parser.add_option("-a", "--adapter", dest="adapter", action="store",
+                      type="string", default=None,
+                      help="CEC adapter path to use (e.g., '/dev/cec0'). "
+                           "If not specified, uses first adapter found.")
     parser.add_option("-v", "--verbose", dest="verbose", action="count",
                       default=0, help="Increase verbosity.")
     parser.add_option("-q", "--quiet", dest="quiet", action="count",
@@ -117,6 +122,7 @@ def configure():
     script_dir = os.path.dirname(os.path.realpath(__file__))
     config = configparser.ConfigParser()
     config['DEFAULT'] = {'host': options.host, 'port': options.port,
+                         'adapter': options.adapter,
                          'logLevel': logging.INFO + (
                              (options.quiet - options.verbose) * 10)}
     paths = ['/etc/pycec.conf', script_dir + '/pycec.conf']

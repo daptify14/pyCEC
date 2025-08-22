@@ -13,10 +13,11 @@ _LOGGER = logging.getLogger(__name__)
 class CecAdapter(AbstractCecAdapter):
     def __init__(self, name: str = None, monitor_only: bool = None,
                  activate_source: bool = None,
-                 device_type=ADDR_RECORDINGDEVICE1):
+                 device_type=ADDR_RECORDINGDEVICE1, adapter_path: str = None):
         super().__init__()
         self._adapter = None
         self._io_executor = ThreadPoolExecutor(1)
+        self._adapter_path = adapter_path
         import cec
         self._cecconfig = cec.libcec_configuration()
         if monitor_only is not None:
@@ -68,15 +69,22 @@ class CecAdapter(AbstractCecAdapter):
         adapter = cec.ICECAdapter.Create(self._cecconfig)
         _LOGGER.debug("Created adapter")
         a = None
-        adapters = adapter.DetectAdapters()
-        for a in adapters:
-            _LOGGER.info("found a CEC adapter:")
-            _LOGGER.info("port:     " + a.strComName)
-            _LOGGER.info("vendor:   " + (
-                VENDORS[a.iVendorId] if a.iVendorId in VENDORS else hex(
-                    a.iVendorId)))
-            _LOGGER.info("product:  " + hex(a.iProductId))
-            a = a.strComName
+        if self._adapter_path:
+            a = self._adapter_path
+            _LOGGER.info("Using specified adapter: %s", a)
+        else:
+            first_adapter = None
+            adapters = adapter.DetectAdapters()
+            for adapter_info in adapters:
+                _LOGGER.info("found a CEC adapter:")
+                _LOGGER.info("port:     " + adapter_info.strComName)
+                _LOGGER.info("vendor:   " + (
+                    VENDORS[adapter_info.iVendorId] if adapter_info.iVendorId in VENDORS else hex(
+                        adapter_info.iVendorId)))
+                _LOGGER.info("product:  " + hex(adapter_info.iProductId))
+                if first_adapter is None:
+                    first_adapter = adapter_info.strComName
+            a = first_adapter
         if a is None:
             _LOGGER.warning("No adapters found")
         else:
